@@ -37,10 +37,10 @@ def sumGradient(conv_x,conv_y,conv_xy,i,j,kernel_size,src,window):
         for y in range(start,end):
             if(x+i<0 or y+j<0 or x+i>=i_boundary or y+j>=j_boundary): continue
             else:
-                M[0][0] = conv_x[i+x][j+y] * window[index_i][index_j]
-                M[0][1] = conv_xy[i+x][j+y] * window[index_i][index_j]
-                M[1][0] = conv_xy[i+x][j+y] * window[index_i][index_j]
-                M[1][1] = conv_y[i+x][j+y] * window[index_i][index_j]
+                M[0][0] += conv_x[i+x][j+y] * window[index_i][index_j]
+                M[0][1] += conv_xy[i+x][j+y] * window[index_i][index_j]
+                M[1][0] += conv_xy[i+x][j+y] * window[index_i][index_j]
+                M[1][1] += conv_y[i+x][j+y] * window[index_i][index_j]
             index_j += 1
         index_i += 1
         
