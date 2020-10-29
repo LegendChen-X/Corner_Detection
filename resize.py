@@ -29,9 +29,11 @@ def Sobel_Operation(src):
     res = np.empty((x_length,y_length), dtype=float)
     conv_x = cv.filter2D(src,-1,sobel_x)
     conv_y = cv.filter2D(src,-1,sobel_y)
+    conv_x = conv_x * conv_x
+    conv_y = conv_y * conv_y
     for i in range(x_length):
         for j in range(y_length):
-            res[i][j] = math.sqrt(conv_x[i][j]**2+conv_y[i][j]**2)
+            res[i][j] = math.sqrt(conv_x[i][j]+conv_y[i][j])
     return res
 
 def getGreyImge(img):
@@ -50,15 +52,15 @@ def cutColoum(src):
             if not j:
                 index = np.argmin(backtrack[i+1, j:j + 2])
                 backtrack[i][j] = gradients[i][j] + backtrack[i+1][j+index]
-                directions[i][j] = -index
+                directions[i][j] = index
             elif j == j_length - 1:
                 index = np.argmin(backtrack[i+1, j-1:j+1])
                 backtrack[i][j] = gradients[i][j] + backtrack[i+1][j-1+index]
-                directions[i][j] = 1 - index
+                directions[i][j] = index - 1
             else:
                 index = np.argmin(backtrack[i+1, j-1:j + 2])
                 backtrack[i][j] = gradients[i][j] + backtrack[i+1][j-1+index]
-                directions[i][j] = 1 - index
+                directions[i][j] = index - 1
     binary_matrix = np.ones((i_length, j_length), dtype=int)
     min_j = np.argmin(backtrack[0])
     for i in range(i_length):
@@ -92,16 +94,12 @@ def mainCol(src,new_col):
                     new_image[i][new_j][1] = buff[i][j][1]
                     new_image[i][new_j][2] = buff[i][j][2]
                     new_j += 1
-    img_1 = Image.fromarray(new_image,'RGB')
-    img_1.show()
     return new_image
     
 def mainRow(src,new_row):
     row, col, _ = src.shape
     new_image = src.copy()
     if(new_row>=row): return src
-    
-    
     for k in range(row-new_row):
         print(k)
         binary_matrix = cutRow(getGreyImge(new_image))
@@ -112,7 +110,6 @@ def mainRow(src,new_row):
                 rotate_binary_matrix[i][j] = binary_matrix[j_length-j-1][i]
         buff = new_image.copy()
         new_image = np.zeros((i_length-1,j_length,_),dtype=np.uint8)
-        
         for j in range(j_length):
             new_i = 0
             for i in range(i_length):
@@ -121,23 +118,31 @@ def mainRow(src,new_row):
                     new_image[new_i][j][1] = buff[i][j][1]
                     new_image[new_i][j][2] = buff[i][j][2]
                     new_i += 1
-        
-    img_1 = Image.fromarray(new_image,'RGB')
-    img_1.show()
     return new_image
         
 def main(src,new_row,new_col):
     new_image = src.copy()
-    new_image = mainCol(new_image,new_col)
     new_image = mainRow(new_image,new_row)
+    new_image = mainCol(new_image,new_col)
     return new_image
-    
         
 if __name__ == '__main__':
-    src_1 = plt.imread("./ex3.jpg")
+    img = cv.imread("ex2.jpg")
+    resized = cv.resize(img, (1200, 861), interpolation = cv.INTER_AREA)
+    cv.imshow("Resized image", resized)
+    cv.waitKey(0)
+"""
+    img = cv.imread("ex3.jpg")
+    crop_img = img[0:870, 0:1200]
+    cv.imshow("cropped", crop_img)
+    cv.waitKey(0)
+"""
+'''
+    src_1 = plt.imread("./my.jpg")
+    print(src_1.shape)
     src_buff = cv.filter2D(src_1,-1,Gaussian_Blur(0.6,3))
-    main(src_buff,800,10000)
-    #img_1 = Image.fromarray(mainCol(src_1,1439),'RGB')
-    #img_1.save('my.jpg')
-    #mg_1.show()
+    img_1 = Image.fromarray(main(src_buff, 870, 1200),'RGB')
+    img_1.save('my2.jpg')
+    img_1.show()
+'''
     
