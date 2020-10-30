@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import cv2 as cv
 
+### This part code is from my A1. ###
+################################# Begin #################################
 def Gaussian_Model(sigma,point):
     x, y = point
     ratio = 1/(2*math.pi*sigma**2)
@@ -40,29 +42,50 @@ def getGreyImge(img):
 # Change the rgb value to grey. #
     rgb_weights = np.array([0.2989, 0.5870, 0.1140])
     return np.dot(img[...,:3], rgb_weights)
+################################# End #################################
     
 def cutColoum(src):
     i_length, j_length = src.shape
+    # Array for saving the minimum energy from bottom to up (Dynamic Programming).
     backtrack = np.zeros((i_length, j_length), dtype=float)
+    # Recod the direction. We want to use the direction to trace the minimum energy path.
     directions = np.zeros((i_length, j_length), dtype=int)
+    # Get the gradients(energy map).
     gradients = Sobel_Operation(src)
-    for j in range(j_length): backtrack[i_length-1][j] = src[i_length-1][j]
+    # Initilize the last row of backtrack. It should be the same as the last row of our energy map.
+    for j in range(j_length): backtrack[i_length-1][j] = gradients[i_length-1][j]
+    # From bottom to top.
     for i in reversed(range(i_length-1)):
         for j in range(j_length):
+            # case 1: j=0, we only have two choice up and up-right.
             if not j:
+                # Get the index for the minimum value.
                 index = np.argmin(backtrack[i+1, j:j + 2])
+                # Get the minmium path from this point to the bottom.
                 backtrack[i][j] = gradients[i][j] + backtrack[i+1][j+index]
+                # Trace the direction.
                 directions[i][j] = index
+            # case 2: j=length-1, we only have two choices up-left and up.
             elif j == j_length - 1:
+                # Get the index for the minimum value.
                 index = np.argmin(backtrack[i+1, j-1:j+1])
+                # Get the minmium path from this point to the bottom.
                 backtrack[i][j] = gradients[i][j] + backtrack[i+1][j-1+index]
+                # Trace the direction.
                 directions[i][j] = index - 1
+            # case 3: normal j, we have three choices up-left, up and up-right.
             else:
+                # Get the index for the minimum value.
                 index = np.argmin(backtrack[i+1, j-1:j + 2])
+                # Get the minmium path from this point to the bottom.
                 backtrack[i][j] = gradients[i][j] + backtrack[i+1][j-1+index]
+                # Trace the direction.
                 directions[i][j] = index - 1
+    # Boolean matrix to record which one will be removed or kept.
     binary_matrix = np.ones((i_length, j_length), dtype=int)
+    # Index for the minimum value of the first row.
     min_j = np.argmin(backtrack[0])
+    # Trace the path of minimum value and set position of boolean matrix to 0.
     for i in range(i_length):
         binary_matrix[i][min_j] = 0
         min_j = min_j + directions[i][min_j]
@@ -71,21 +94,29 @@ def cutColoum(src):
 def cutRow(src):
     i_length, j_length = src.shape
     rotate = np.zeros((j_length, i_length), dtype=float)
+    # Rotate the matrix
     for i in range(i_length):
         for j in range(j_length):
             rotate[j_length-j-1][i] = src[i][j]
+    # Rotate and cut one coloum.
     return cutColoum(rotate)
 
 def mainCol(src,new_col):
+# This funciton take src of RGB image.
+    # Get r, c and dimension.
     row, col, _ = src.shape
+# Make a copy, since we need to loop n times on new image.
     new_image = src.copy()
+# If the parameter is invalid, return src.
     if(new_col>=col): return src
+# Cut coloums col-new_col times.
     for k in range(col-new_col):
         print(k)
         binary_matrix = cutColoum(getGreyImge(new_image))
         i_length,j_length = binary_matrix.shape
         buff = new_image.copy()
         new_image = np.zeros((i_length,j_length-1,_),dtype=np.uint8)
+        # Set new value to new_image based on binary matrix.
         for i in range(i_length):
             new_j = 0
             for j in range(j_length):
@@ -97,19 +128,26 @@ def mainCol(src,new_col):
     return new_image
     
 def mainRow(src,new_row):
+# This funciton take src of RGB image.
+    # Get r, c and dimension.
     row, col, _ = src.shape
+    # Make a copy, since we need to loop n times on new image.
     new_image = src.copy()
+    # If the parameter is invalid, return src.
     if(new_row>=row): return src
+    # Cut coloums row-new_row times.
     for k in range(row-new_row):
         print(k)
         binary_matrix = cutRow(getGreyImge(new_image))
         j_length,i_length = binary_matrix.shape
         rotate_binary_matrix = np.zeros((i_length, j_length), dtype=int)
+        # Rotate the binary matrix.
         for i in range(i_length):
             for j in range(j_length):
                 rotate_binary_matrix[i][j] = binary_matrix[j_length-j-1][i]
         buff = new_image.copy()
         new_image = np.zeros((i_length-1,j_length,_),dtype=np.uint8)
+        # Set new value to new_image based on binary matrix.
         for j in range(j_length):
             new_i = 0
             for i in range(i_length):
@@ -121,28 +159,38 @@ def mainRow(src,new_row):
     return new_image
         
 def main(src,new_row,new_col):
+    # Make a copy.
     new_image = src.copy()
+    # Cut rows.
     new_image = mainRow(new_image,new_row)
+    # Cut cols.
     new_image = mainCol(new_image,new_col)
     return new_image
-        
-if __name__ == '__main__':
-    img = cv.imread("ex2.jpg")
-    resized = cv.resize(img, (1200, 861), interpolation = cv.INTER_AREA)
+    
+def process(path, new_row, new_col):
+# resize the image.
+    img = cv.imread(path)
+    print(img.shape)
+    resized = cv.resize(img, (new_col, new_row), interpolation = cv.INTER_AREA)
     cv.imshow("Resized image", resized)
+# Press 0 to continue.
     cv.waitKey(0)
-"""
-    img = cv.imread("ex3.jpg")
-    crop_img = img[0:870, 0:1200]
+# Crop image,
+    img = cv.imread(path)
+    crop_img = img[0:new_row, 0:new_col]
     cv.imshow("cropped", crop_img)
+# Press 0 to continue.
     cv.waitKey(0)
-"""
-'''
-    src_1 = plt.imread("./my.jpg")
+# Seam image(Very slow).
+    src_1 = plt.imread(path)
     print(src_1.shape)
     src_buff = cv.filter2D(src_1,-1,Gaussian_Blur(0.6,3))
-    img_1 = Image.fromarray(main(src_buff, 870, 1200),'RGB')
-    img_1.save('my2.jpg')
+    img_1 = Image.fromarray(main(src_buff, new_row, new_col),'RGB')
     img_1.show()
-'''
+        
+if __name__ == '__main__':
+    process("ex1.jpg",968,957)
+    process("ex2.jpg",861,1200)
+    process("ex3.jpg",870,1200)
+
     

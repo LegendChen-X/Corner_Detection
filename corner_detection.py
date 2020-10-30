@@ -53,16 +53,23 @@ def getGreyImge(img):
 ################################# End #################################
     
 def eigenvalues(src,kernel_size):
+# Get Sobel Operator
     sobel_x = np.array([[-1,0,1],[-2,0,2],[-1,0,1]])
     sobel_y = np.array([[-1,-2,-1],[0,0,0],[1,2,1]])
+# If you do not want me to use the library, we can use the convolution function above, but it is too slow.
     grad_x = cv.filter2D(src,-1,sobel_x)
     grad_y = cv.filter2D(src,-1,sobel_y)
+# Get I_xy
     I_xy = grad_x * grad_y
+# Get I_x^2
     I_x = grad_x * grad_x
+# Get I_y^2
     I_y = grad_y * grad_y
+# Get Gaussian Matrix
+# Change kernel size if you want a different size of Gaussian Matrix
     window = Gaussian_Blur(kernel_size/6,kernel_size)
-    # Use Gaussian Matrix to do the convolution.
-    # If you do not want me to use the library, we can use the convolution function.
+    # Use Gaussian Matrix to do the convolution (same as sum with Gaussian Matrix, central symmetry).
+    # If you do not want me to use the library, we can use the convolution function above, but it is too slow.
     I_x = cv.filter2D(I_x,-1,window)
     I_y = cv.filter2D(I_y,-1,window)
     I_xy = cv.filter2D(I_xy,-1,window)
@@ -71,6 +78,7 @@ def eigenvalues(src,kernel_size):
     eigenvalues_2 = np.zeros((x_length,y_length),dtype=complex)
     for i in range(x_length):
         for j in range(y_length):
+            # Get M.
             M = np.array([[I_x[i][j],I_xy[i][j]],[I_xy[i][j],I_y[i][j]]])
             eigvals, eigvecs = la.eig(M)
             # If you don't want me to use library, here is the alternative way to get eigenvalue of 2*2 Matricx
@@ -82,17 +90,21 @@ def eigenvalues(src,kernel_size):
     
 def scatterplot(src):
     eigenvalues_1, eigenvalues_2 = eigenvalues(src,3)
+    # Choose alpha to make my image more beautiful.
     plt.scatter(eigenvalues_1, eigenvalues_2, alpha=0.6)
     plt.show()
     
 def corner_detection(src):
-    eigenvalues_1, eigenvalues_2 = eigenvalues(src,21)
+# This function will return an array for binary image.
+    eigenvalues_1, eigenvalues_2 = eigenvalues(src,3)
     x_length, y_length = src.shape
     R = np.zeros((x_length,y_length),dtype=float)
     for i in range(x_length):
         for j in range(y_length):
+# Threshold choosen as 18888. I like this number.
             if min(eigenvalues_1[i][j],eigenvalues_2[i][j])>18888:
                 R[i][j] = 255
+    Image.fromarray(R).show()
     return R
 
 def label(src, R):
@@ -101,18 +113,20 @@ def label(src, R):
     for i in range(r):
         for j in range(c):
             if R[i][j]:
+            # If it is a corner, we set it into red(RGB=(255,0,0)).
                 new_image[i][j][0] = 255
                 new_image[i][j][1] = 0
                 new_image[i][j][2] = 0
             else:
+            # If it is not a corner, we set it into the same value woth src.
                 new_image[i][j][0] = src_1[i][j][0]
                 new_image[i][j][1] = src_1[i][j][1]
                 new_image[i][j][2] = src_1[i][j][2]
+    Image.fromarray(new_image).show()
     return new_image
     
 if __name__ == '__main__':
     src_1 = plt.imread("./ex5.jpg")
-    #scatterplot(getGreyImge(src_1))
+    scatterplot(getGreyImge(src_1))
     R = corner_detection(getGreyImge(src_1))
     new_image_1 = label(src_1, R)
-    Image.fromarray(R).show()
