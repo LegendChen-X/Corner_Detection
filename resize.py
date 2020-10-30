@@ -170,7 +170,6 @@ def main(src,new_row,new_col):
 def process(path, new_row, new_col):
 # resize the image.
     img = cv.imread(path)
-    print(img.shape)
     resized = cv.resize(img, (new_col, new_row), interpolation = cv.INTER_AREA)
     cv.imshow("Resized image", resized)
 # Press 0 to continue.
@@ -183,7 +182,6 @@ def process(path, new_row, new_col):
     cv.waitKey(0)
 # Seam image(Very slow).
     src_1 = plt.imread(path)
-    print(src_1.shape)
     src_buff = cv.filter2D(src_1,-1,Gaussian_Blur(0.6,3))
     img_1 = Image.fromarray(main(src_buff, new_row, new_col),'RGB')
     img_1.show()
@@ -192,5 +190,3 @@ if __name__ == '__main__':
     process("ex1.jpg",968,957)
     process("ex2.jpg",861,1200)
     process("ex3.jpg",870,1200)
-
-    
