@@ -111,7 +111,6 @@ def mainCol(src,new_col):
     if(new_col>=col): return src
 # Cut coloums col-new_col times.
     for k in range(col-new_col):
-        print(k)
         binary_matrix = cutColoum(getGreyImge(new_image))
         i_length,j_length = binary_matrix.shape
         buff = new_image.copy()
@@ -137,7 +136,6 @@ def mainRow(src,new_row):
     if(new_row>=row): return src
     # Cut coloums row-new_row times.
     for k in range(row-new_row):
-        print(k)
         binary_matrix = cutRow(getGreyImge(new_image))
         j_length,i_length = binary_matrix.shape
         rotate_binary_matrix = np.zeros((i_length, j_length), dtype=int)
